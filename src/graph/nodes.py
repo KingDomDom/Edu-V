@@ -251,7 +251,7 @@ def coordinator_node(
     )
     
 def online_investigator_node(state: State, config: RunnableConfig):
-    logger.info("background investigation node is running.")
+    logger.info("online investigator node is running.")
     configurable = Configuration.from_runnable_config(config)
     query = state.get("research_topic")
     online_invest_results = None
@@ -276,6 +276,20 @@ def online_investigator_node(state: State, config: RunnableConfig):
         online_invest_results = get_web_search_tool(
             configurable.max_search_results
         ).invoke(query)
+        
+    logger.info("according to online investigator's result, output again")
+    configurable = Configuration.from_runnable_config(config)
+    messages = apply_prompt_template("online_investigator", state)
+    response = (
+        get_llm_by_type(AGENT_LLM_MAP["online_investigator"])
+        .bind_tools([])
+        .invoke(messages)
+    )
+    print(response)
+    logger.debug(f"Current state messages: {state['messages']}")
+    
+    goto = "__end__"
+    
     return {
         "online_invest_results": json.dumps(
             online_invest_results, ensure_ascii=False
