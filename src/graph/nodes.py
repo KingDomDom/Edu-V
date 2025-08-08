@@ -194,7 +194,7 @@ def coordinator_node(
             goto = "online_investigator"
     try:
         for tool_call in response.tool_calls:
-            if tool_call.get("name") == "handoff_to_tp_planner":
+            if tool_call.get("name") == "handoff_to_teach_planner":
                 # Hand off to TP planner
                 locale = tool_call.get("args", {}).get("locale", locale)
                 research_topic = tool_call.get("args", {}).get("research_topic", research_topic)
@@ -206,7 +206,7 @@ def coordinator_node(
                     },
                     goto="teach_planner",  # Direct to TP planner
                 )
-            elif tool_call.get("name") == "handoff_to_sp_planner":
+            elif tool_call.get("name") == "handoff_to_study_planner":
                 # Hand off to SP planner
                 locale = tool_call.get("args", {}).get("locale", locale)
                 research_topic = tool_call.get("args", {}).get("research_topic", research_topic)
@@ -218,6 +218,20 @@ def coordinator_node(
                     },
                     goto="study_planner",  # Direct to SP planner
                 )
+            elif tool_call.get("name") == "handoff_to_online_investigator":
+                # Hand off to TP planner
+                locale = tool_call.get("args", {}).get("locale", locale)
+                research_topic = tool_call.get("args", {}).get("research_topic", research_topic)
+                return Command(
+                    update={
+                        "locale": locale,
+                        "research_topic": research_topic,
+                        "resources": configurable.resources,
+                    },
+                    goto="online_investigator",  # Direct to TP planner
+                )
+            else:
+                continue
     except Exception as e:
         logger.error(f"Error processing tool calls: {e}")
     else:
