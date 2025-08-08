@@ -12,5 +12,5 @@ class State(MessagesState):
     current_plan: Plan | str = None
     final_report:str = ""
     auto_accepted_plan: bool = False
-    enable_online_invest: bool = False
+    enable_online_invest: bool = True
     online_invest_result: str = ""

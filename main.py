@@ -39,7 +39,7 @@ def main(
     debug=False,
     max_plan_iterations=1,
     max_step_num=3,
-    enable_online_invest=False,
+    enable_online_invest=True,
 ):
     """Interactive mode with built-in questions.
 

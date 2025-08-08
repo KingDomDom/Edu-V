@@ -31,6 +31,16 @@ from ..config import SELECTED_SEARCH_ENGINE, SearchEngine
 logger = logging.getLogger(__name__)
 
 @tool
+def handoff_to_online_investigator(
+    research_topic: Annotated[str, "research task"],
+    locale: Annotated[str, "language locale (en-US, zh-CN)"],
+):
+    """
+    This is a decorated function
+    """
+    return
+
+@tool
 def handoff_to_teach_planner(
     research_topic: Annotated[str, "research task"],
     locale: Annotated[str, "language locale (en-US, zh-CN)"],
@@ -164,13 +174,13 @@ def study_planner_node(state: State, config: RunnableConfig) -> Command[Literal[
 
 def coordinator_node(
     state: State, config: RunnableConfig
-) -> Command[Literal["study_planner","teach_planner", "__end__"]]:
+) -> Command[Literal["study_planner","teach_planner","online_investigator", "__end__"]]:
     logger.info("Coordinator is running")
     configurable = Configuration.from_runnable_config(config)
     messages = apply_prompt_template("coordinator", state)
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coordinator"])
-        .bind_tools([handoff_to_teach_planner,handoff_to_study_planner])
+        .bind_tools([handoff_to_teach_planner,handoff_to_study_planner,handoff_to_online_investigator])
         .invoke(messages)
     )
     logger.debug(f"Current state messages: {state['messages']}")
@@ -180,9 +190,8 @@ def coordinator_node(
     research_topic = state.get("research_topic", "")
     
     if len(response.tool_calls) > 0:
-        goto = "planner"
-        # if state.get("enable_online_search"):
-        #     goto "online_searcher"
+        if state.get("enable_online_invest"):
+            goto = "online_investigator"
     try:
         for tool_call in response.tool_calls:
             if tool_call.get("name") == "handoff_to_tp_planner":
@@ -226,4 +235,36 @@ def coordinator_node(
         },
         goto = goto,
     )
+    
+def online_investigator_node(state: State, config: RunnableConfig):
+    logger.info("background investigation node is running.")
+    configurable = Configuration.from_runnable_config(config)
+    query = state.get("research_topic")
+    online_invest_results = None
+    if SELECTED_SEARCH_ENGINE == SearchEngine.TAVILY.value:
+        searched_content = LoggedTavilySearch(
+            max_results=configurable.max_search_results
+        ).invoke(query)
+        if isinstance(searched_content, list):
+            online_invest_results = [
+                f"## {elem['title']}\n\n{elem['content']}" for elem in searched_content
+            ]
+            return {
+                "online_invest_results": "\n\n".join(
+                    online_invest_results
+                )
+            }
+        else:
+            logger.error(
+                f"Tavily search returned malformed response: {searched_content}"
+            )
+    else:
+        online_invest_results = get_web_search_tool(
+            configurable.max_search_results
+        ).invoke(query)
+    return {
+        "online_invest_results": json.dumps(
+            online_invest_results, ensure_ascii=False
+        )
+    }
 
