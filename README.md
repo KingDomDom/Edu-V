@@ -15,6 +15,17 @@ uv sync
 
 ./.venv/Scripts/activate
 
+
+```
+# LangGraph Studio & LangSmith
+
+```python
+# Install dependencies
+pip install -e .
+pip install -U "langgraph-cli[inmem]"
+
+# Start the LangGraph server
+langgraph dev
 ```
 
 # Demo
