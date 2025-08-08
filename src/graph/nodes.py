@@ -263,6 +263,17 @@ def online_investigator_node(state: State, config: RunnableConfig):
             online_invest_results = [
                 f"## {elem['title']}\n\n{elem['content']}" for elem in searched_content
             ]
+
+            logger.info("according to online investigator's result, output again")
+            messages = apply_prompt_template("online_investigator", state)
+            messages.append(HumanMessage(content=f"online_invest_results: \n{online_invest_results}"))
+            response = (
+                get_llm_by_type(AGENT_LLM_MAP["online_investigator"])
+                .bind_tools([])
+                .invoke(messages)
+            )
+            logger.info(f"Online Investigator Response: {response.content}")
+            logger.debug(f"Current state messages: {state['messages']}")
             return {
                 "online_invest_results": "\n\n".join(
                     online_invest_results
@@ -276,20 +287,7 @@ def online_investigator_node(state: State, config: RunnableConfig):
         online_invest_results = get_web_search_tool(
             configurable.max_search_results
         ).invoke(query)
-        
-    logger.info("according to online investigator's result, output again")
-    configurable = Configuration.from_runnable_config(config)
-    messages = apply_prompt_template("online_investigator", state)
-    response = (
-        get_llm_by_type(AGENT_LLM_MAP["online_investigator"])
-        .bind_tools([])
-        .invoke(messages)
-    )
-    print(response)
-    logger.debug(f"Current state messages: {state['messages']}")
-    
-    goto = "__end__"
-    
+      
     return {
         "online_invest_results": json.dumps(
             online_invest_results, ensure_ascii=False
