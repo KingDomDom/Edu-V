@@ -1,0 +1,4 @@
+BASIC_MODEL:
+  base_url: https://ark.cn-beijing.volces.com/api/v3/
+  model: "doubao-1-5-lite-32k-250115"
+  api_key: 9e31efa2-02b8-4923-b12d-8ab52d316108
